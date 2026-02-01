@@ -1,54 +1,40 @@
-# FundReady Namibia DSS & PAP
+# FundReady Namibia: Streamlit Decision Support System
 
-FundReady Namibia is a comprehensive Decision Support System (DSS) and Predictive Analytics Platform (PAP) designed to empower Namibian Small and Medium Enterprises (SMEs) to become funding-ready and secure loans/grants.
+FundReady Namibia is a 100% Python-based Decision Support System (DSS) and Predictive Analytics Platform (PAP). It is designed to help Namibian SMEs become funding-ready through intelligent assessments, AI-driven document auditing, and predictive success modeling.
 
-## Project Vision
-- **Increase Funding Success:** Improve SME chances of securing financial support.
-- **Optimize Loan Terms:** Present SMEs as lower-risk borrowers for better interest rates.
-- **Regulatory Sandbox:** Built for submission to the Bank of Namibia's Regulatory Sandbox.
+## 🚀 Quick Start (Streamlit)
 
-## Tech Stack (100% Python)
-- **Backend:** Django & Django REST Framework (DRF)
-- **Frontend:** Streamlit
-- **Analytics:** Integrated Predictive Engine (NumPy, Pandas)
-- **Security:** Environment-based configuration
+The fastest way to experience FundReady Namibia is through the Streamlit interface:
 
-## Core Features
-1.  **SME Success Dashboard:** View Readiness Scores, ML-predicted success probabilities, and Data Trust Scores.
-2.  **Diagnostic Assessment:** Interactive questionnaire with real-time scoring.
-3.  **AI Document Decipherer:** LLM-powered keyword and metric extraction from PDF/Images.
-4.  **Financial Projection Assistant:** 3-year bank-standard financial forecasting (Income Statement, Cash Flow, Balance Sheet).
-5.  **GIGO Resistance:** Multi-layered validation and anomaly detection to ensure high-quality data.
-6.  **Fiduciary Logging:** Comprehensive audit trails of all user activities.
-
-## How to Launch in VS Code
-
-This project is pre-configured for VS Code. Follow these steps to launch:
-
-1.  **Install Dependencies:**
-    Open your terminal and run:
+1.  **Install Requirements:**
     ```bash
     pip install -r requirements.txt
     ```
 
-2.  **Initialize Database (First time only):**
+2.  **Launch the App:**
     ```bash
-    cd backend
-    python manage.py makemigrations core
-    python manage.py migrate
-    python manage.py seed_db
+    streamlit run streamlit_app.py
     ```
 
-3.  **Launch via VS Code:**
-    - Go to the **Run and Debug** view in the VS Code Sidebar (Ctrl+Shift+D).
-    - Select **"Launch Full App"** from the dropdown menu.
-    - Click the **Green Play Button**.
-    - This will start both the **Django Backend** (on port 8000) and the **Streamlit UI** (on port 8501).
+## 🛠️ VS Code Integration
 
-4.  **Access the App:**
-    - The Streamlit UI will automatically open in your browser at `http://localhost:8501`.
-    - The Django API is available at `http://localhost:8000/api`.
+This project is optimized for VS Code.
+- Open the **Run and Debug** tab (Ctrl+Shift+D).
+- Select **"Launch Streamlit App"** to start the UI.
+- Select **"Launch Full App (Backend + UI)"** if you want to run the Django API alongside the Streamlit interface.
 
-## Troubleshooting
-- **NameError: name 'null' is not defined:** This usually happens if you try to run an `.ipynb` (Jupyter Notebook) file directly with the Python interpreter. Notebooks are JSON files and cannot be run as scripts. Please use the VS Code "Run and Debug" configurations provided.
-- **Missing Module:** Ensure you have activated your virtual environment and run `pip install -r requirements.txt`.
+## 🌟 Key Features
+- **Predictive Success Dashboard:** Real-time ML-driven probability of funding success.
+- **Diagnostic Assessment:** Comprehensive SME readiness check.
+- **Funding Matchmaker:** Searchable database of Namibian lenders (FNB, DBN, etc.).
+- **AI Document Decipherer:** Automated extraction of metrics from PDFs and images.
+- **Creditworthiness Simulator:** Interactive "what-if" scenarios for interest rate optimization.
+- **Sandbox Submission Portal:** Compliant interface for the Bank of Namibia Regulatory Sandbox.
+
+## 🏗️ Architecture
+- **Frontend:** Streamlit (Pure Python)
+- **Backend:** Django & Django REST Framework (Data persistence & GIGO-resistant validation)
+- **Analytics:** NumPy & Pandas (Predictive modeling)
+
+## 📝 Fiduciary Compliance
+The system includes a **Usage Log** to track all user activities and dates, ensuring transparency for fiduciary and regulatory requirements.

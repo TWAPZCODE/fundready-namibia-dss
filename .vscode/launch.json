@@ -2,6 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Streamlit App",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${workspaceFolder}/streamlit_app.py",
+                "--server.port",
+                "8501"
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Python: Django Server",
             "type": "debugpy",
             "request": "launch",
@@ -15,25 +28,12 @@
                 "DJANGO_SECRET_KEY": "vs-code-dev-key",
                 "DJANGO_DEBUG": "True"
             }
-        },
-        {
-            "name": "Python: Streamlit UI",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "streamlit",
-            "args": [
-                "run",
-                "${workspaceFolder}/ui/app.py",
-                "--server.port",
-                "8501"
-            ],
-            "justMyCode": true
         }
     ],
     "compounds": [
         {
-            "name": "Launch Full App",
-            "configurations": ["Python: Django Server", "Python: Streamlit UI"]
+            "name": "Launch Full App (Backend + UI)",
+            "configurations": ["Python: Django Server", "Launch Streamlit App"]
         }
     ]
 }
