@@ -1,0 +1,13 @@
+{
+  "name": "fundready-namibia-dss",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "build": "cd client && npm install && npm run build",
+    "postinstall": "cd client && npm install"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
