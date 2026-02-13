@@ -1,261 +1,210 @@
 import streamlit as st
 import pandas as pd
-import requests
+import numpy as np
 import time
 import random
+import datetime
 
-# Page Config
-st.set_page_config(page_title="FundReady Namibia DSS", layout="wide")
+# =========================================================
+# 1. PAGE CONFIG & INITIALIZATION (MUST BE AT THE VERY TOP)
+# =========================================================
+st.set_page_config(page_title="FundReady Namibia DSS", layout="wide", page_icon="🇳🇦")
+
+# Initialize Session State
+if 'readiness_score' not in st.session_state:
+    st.session_state['readiness_score'] = 45
+if 'ml_prediction' not in st.session_state:
+    st.session_state['ml_prediction'] = 0.52
+if 'trust_score' not in st.session_state:
+    st.session_state['trust_score'] = 0.60
+if 'usage_logs' not in st.session_state:
+    st.session_state['usage_logs'] = []
+
+def add_log(action):
+    """Fiduciary Compliance Logger"""
+    log_entry = {
+        "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Action": action,
+        "User": "SME_Admin_001"
+    }
+    st.session_state['usage_logs'].append(log_entry)
+
+# ==========================================
+# 2. CORE LOGIC MODULES
+# ==========================================
+
+class DataAnomalyDetector:
+    def detect_outlier(self, field_name, value, sector):
+        benchmarks = {'Agriculture': {'revenue': 500000, 'std': 200000}, 'Mining': {'revenue': 5000000, 'std': 1000000}}
+        if sector in benchmarks and field_name in benchmarks[sector]:
+            stats = benchmarks[sector]
+            z_score = abs((float(value) - stats['revenue']) / stats['std'])
+            return z_score > 3
+        return False
+
+    def check_consistency(self, data):
+        issues = []
+        rev, exp = float(data.get('revenue', 0)), float(data.get('expenses', 0))
+        if rev < 0: issues.append("Revenue cannot be negative.")
+        if rev > 0 and exp > rev * 10: issues.append("Expenses are unusually high relative to revenue.")
+        return issues
+
+class PredictiveEngine:
+    def predict_readiness_probability(self, profile_data):
+        base_prob = 0.4
+        years = profile_data.get('years_in_operation', 0)
+        if years > 5: base_prob += 0.3
+        elif years > 2: base_prob += 0.15
+        if profile_data.get('is_registered'): base_prob += 0.2
+        return min(max(base_prob + random.uniform(-0.05, 0.05), 0.0), 1.0)
+
+class DocumentDecipherer:
+    def decipher(self, file_name):
+        return {
+            'keywords': ['Revenue', 'Compliance', 'Namibia', 'BIPA'],
+            'detected_type': 'Financial Document' if file_name.lower().endswith('.pdf') else 'Image Scan',
+            'summary': 'AI processing complete.'
+        }
+
+def generate_projections(base_revenue, base_expenses, scenario='Realistic'):
+    multipliers = {'Conservative': (1.05, 1.02), 'Realistic': (1.15, 1.05), 'Optimistic': (1.30, 1.10)}
+    rev_mult, exp_mult = multipliers[scenario]
+    data = []
+    r, e = float(base_revenue), float(base_expenses)
+    for year in range(1, 4):
+        data.append({"Year": f"Year {year}", "Revenue": round(r, 2), "Expenses": round(e, 2), "Profit": round(r - e, 2)})
+        r *= rev_mult
+        e *= exp_mult
+    return pd.DataFrame(data)
+
+# ==========================================
+# 3. STREAMLIT UI LAYOUT
+# ==========================================
 
 # Sidebar Navigation
-st.sidebar.title("FundReady Namibia")
+st.sidebar.title("🇳🇦 FundReady")
 st.sidebar.subheader("Decision Support System")
-page = st.sidebar.radio("Navigation", ["Dashboard", "Diagnostic Assessment", "Funding Matchmaker", "AI Document Decipherer", "Financial Projection Assistant", "Creditworthiness Simulator", "Sandbox Submission", "Trust Portfolio"])
+page = st.sidebar.radio("Navigate", [
+    "Dashboard",
+    "Diagnostic Assessment",
+    "Funding Matchmaker",
+    "AI Document Decipherer",
+    "Financial Projections",
+    "Creditworthiness Simulator",
+    "Sandbox Submission",
+    "Fiduciary Logs"
+])
 
-# API Configuration
-API_BASE_URL = "http://localhost:8000/api"
+# Utility: Reset State
+if st.sidebar.button("Reset Application"):
+    st.session_state['readiness_score'] = 45
+    st.session_state['ml_prediction'] = 0.52
+    st.session_state['trust_score'] = 0.60
+    st.session_state['usage_logs'] = []
+    st.rerun()
 
-def call_api(endpoint, method="GET", data=None):
-    """Utility to interact with the Django Backend API"""
-    try:
-        url = f"{API_BASE_URL}/{endpoint}"
-        if method == "POST":
-            return requests.post(url, json=data)
-        return requests.get(url)
-    except Exception as e:
-        st.error(f"Backend connection error: {e}")
-        return None
-
-# Global State Simulation (Synced with API results)
-if 'readiness_score' not in st.session_state:
-    st.session_state.readiness_score = 45
-if 'ml_prediction' not in st.session_state:
-    st.session_state.ml_prediction = 0.52
-if 'trust_score' not in st.session_state:
-    st.session_state.trust_score = 0.60
+engine = PredictiveEngine()
+decipherer = DocumentDecipherer()
 
 # --- DASHBOARD ---
 if page == "Dashboard":
-    st.title("SME Success Dashboard")
-    st.write("Welcome back to FundReady Namibia. Here is your current funding readiness overview.")
+    st.title("🚀 SME Success Dashboard")
+    st.write("Current funding readiness overview.")
 
     col1, col2, col3 = st.columns(3)
-
     with col1:
-        st.metric("Readiness Score", f"{st.session_state.readiness_score}%", delta="Rule-based")
-        st.caption("Based on expert criteria")
-
+        st.metric("Readiness Score", f"{st.session_state['readiness_score']}%", "Rule-based")
     with col2:
-        st.metric("ML Success Probability", f"{(st.session_state.ml_prediction * 100):.1f}%", delta="Predictive")
-        st.caption("AI-driven probability")
-
+        st.metric("ML Success Probability", f"{(st.session_state['ml_prediction'] * 100):.1f}%", "Predictive (PAP)")
     with col3:
-        st.metric("Data Trust Score", f"{(st.session_state.trust_score * 100):.0f}%", delta="Quality")
-        st.progress(st.session_state.trust_score)
+        st.metric("Data Trust Score", f"{(st.session_state['trust_score'] * 100):.0f}%", "Quality")
+        st.progress(st.session_state['trust_score'])
 
-    st.info("**Predictive Insight:** Your profile matches the 'High Potential Growth' cluster for the Technology sector. Completing your 'Marketing Strategy' could increase your probability by 12%.")
+    st.info("**Predictive Insight:** Completing your 'Market Analysis' could boost your probability by 15%.")
 
-    st.subheader("Actionable Gap Analysis")
-    st.warning("⚠️ **Critical Gaps Detected:**")
-    st.write("- Business Registration with BIPA is incomplete.")
-    st.write("- Financial records for the last 6 months are inconsistent.")
-    st.write("- Marketing strategy lacks specific Namibian market context.")
+    st.subheader("Gap Analysis")
+    st.warning("⚠️ BIPA Registration is pending verification.")
+    st.warning("⚠️ Financial history is limited.")
 
 # --- DIAGNOSTIC ASSESSMENT ---
 elif page == "Diagnostic Assessment":
-    st.title("Funding Readiness Assessment")
-    st.write("Answer these questions to improve your score and get matched with funders.")
-
-    with st.form("diagnostic_form"):
-        q1 = st.radio("Is your business registered with BIPA?", ["Yes", "No", "In Progress"])
-        q2 = st.radio("Do you have a formal business plan?", ["Yes", "No"])
-        q3 = st.radio("Do you keep separate bank accounts for business and personal use?", ["Yes", "No"])
-        q4 = st.slider("How many years has your business been operating?", 0, 10, 1)
-
-        submitted = st.form_submit_button("Submit Assessment")
-        if submitted:
-            with st.spinner("Submitting to Predictive Engine..."):
-                # Real API call to trigger backend scoring and ML prediction
-                res = call_api("assessments/", method="POST", data={
-                    "company_name": "SME Demo", # Mocked for demo
-                    "registration_status": q1,
-                    "has_business_plan": q2
-                })
+    st.title("📝 Readiness Assessment")
+    with st.form("diag_form"):
+        q1 = st.checkbox("Is your business registered with BIPA?")
+        q2 = st.checkbox("Do you have a formal 3-year business plan?")
+        q3 = st.selectbox("Sector", ["Technology", "Agriculture", "Mining", "Retail"])
+        years = st.slider("Years in Operation", 0, 20, 2)
+        if st.form_submit_button("Submit"):
+            add_log("Completed Diagnostic")
+            with st.spinner("Analyzing..."):
                 time.sleep(2)
-                if res and res.status_code == 201:
-                    data = res.json()
-                    st.session_state.readiness_score = data.get('score', 75)
-                    st.session_state.ml_prediction = data.get('ml_predicted_success', 0.8)
-                    st.success("Assessment Processed by PAP! Your Dashboard has been updated.")
-                else:
-                    st.warning("Assessment saved locally (Backend Offline).")
+                prob = engine.predict_readiness_probability({'years_in_operation': years, 'is_registered': q1})
+                st.session_state['ml_prediction'] = prob
+                st.session_state['readiness_score'] = int(prob * 100)
+                st.success("Analysis Complete!")
                 st.balloons()
 
 # --- FUNDING MATCHMAKER ---
 elif page == "Funding Matchmaker":
-    st.title("Funding Matchmaker")
-    st.write("Find the best funding opportunities based on your sector and readiness.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        sector_filter = st.selectbox("Filter by Sector", ["All", "Agriculture", "Technology", "Mining", "Retail"])
-    with col2:
-        type_filter = st.multiselect("Funding Type", ["Loan", "Grant", "Equity"], default=["Loan", "Grant"])
-
-    # Fetch from API
-    res = call_api("funding-sources/")
-    if res and res.status_code == 200:
-        funding_data = res.json()
-    else:
-        # Fallback to sample data if API is down
-        funding_data = [
-            {"name": "SME Special Loan", "organization": "FNB Namibia", "funding_type": "Loan", "amount_min": "50000", "amount_max": "1000000", "sector": "General"},
-            {"name": "Agri-Business Grant", "organization": "DBN", "funding_type": "Grant", "amount_min": "100000", "amount_max": "5000000", "sector": "Agriculture"},
-        ]
-
-    df_fund = pd.DataFrame(funding_data)
-    if not df_fund.empty:
-        if sector_filter != "All":
-            df_fund = df_fund[df_fund["sector"] == sector_filter]
-
-        for _, row in df_fund.iterrows():
-            with st.expander(f"{row['name']} ({row['organization']})"):
-                st.write(f"**Type:** {row['funding_type']}")
-                st.write(f"**Amount:** NAD {row['amount_min']} - {row['amount_max']}")
-                st.write(f"**Sector:** {row['sector']}")
-                st.write("**Requirements:** BIPA Registration, 12 Months Financials, Good Standing Certificate.")
-                if st.button(f"Apply for {row['name']}", key=row['name']):
-                    st.success("Application started! Progress tracked in your Dashboard.")
+    st.title("🔍 Funding Matchmaker")
+    funds = [{"Name": "SME Special Loan", "Org": "FNB Namibia", "Amount": "NAD 1M"}, {"Name": "Agri-Grant", "Org": "DBN", "Amount": "NAD 5M"}]
+    for f in funds:
+        with st.expander(f"{f['Name']} - {f['Org']}"):
+            st.write(f"Maximum Amount: {f['Amount']}")
+            if st.button(f"Apply for {f['Name']}", key=f['Name']):
+                add_log(f"Applied: {f['Name']}")
+                st.success("Application started!")
 
 # --- AI DOCUMENT DECIPHERER ---
 elif page == "AI Document Decipherer":
-    st.title("AI Document Decipherer & Auditor")
-    st.write("Upload your documents (PDF, Image) and our integrated LLM will extract key data and audit for consistency.")
-
-    uploaded_file = st.file_uploader("Choose a file", type=['pdf', 'png', 'jpg', 'jpeg'])
-
-    if uploaded_file is not None:
-        if st.button("Start AI Analysis"):
-            with st.spinner("LLM is deciphering keywords and metrics..."):
-                time.sleep(3)
-                st.success("Analysis Complete!")
-                st.subheader("Extracted Keywords")
-                st.write("`Revenue`, `Namibian Compliance`, `Operating Expenses`, `NamRA`, `VAT 15%`")
-
-                st.subheader("Audit Report")
-                st.error("❌ **Issue:** Projected expenses do not account for Namibian VAT (15%).")
-                st.error("❌ **Issue:** Executive Summary is too short (less than 200 words).")
-                st.info("💡 **Insight:** AI detected a complete set of financial records for FY2023.")
-
-                st.session_state.trust_score = min(st.session_state.trust_score + 0.15, 1.0)
-
-# --- FINANCIAL PROJECTION ASSISTANT ---
-elif page == "Financial Projection Assistant":
-    st.title("Financial Projection Assistant")
-    st.write("Generate bank-standard 3-year projections.")
-
-    base_rev = st.number_input("Base Yearly Revenue (NAD)", value=100000)
-    base_exp = st.number_input("Base Yearly Expenses (NAD)", value=80000)
-    scenario = st.selectbox("Select Scenario", ["Conservative", "Realistic", "Optimistic"])
-
-    mults = {
-        "Conservative": (1.05, 1.02),
-        "Realistic": (1.15, 1.05),
-        "Optimistic": (1.30, 1.10)
-    }
-    rm, em = mults[scenario]
-
-    data = []
-    r, e = base_rev, base_exp
-    for year in range(1, 4):
-        data.append({
-            "Year": f"Year {year}",
-            "Revenue": round(r, 2),
-            "Expenses": round(e, 2),
-            "Profit": round(r - e, 2)
-        })
-        r *= rm
-        e *= em
-
-    df = pd.DataFrame(data)
-    st.table(df)
-    st.line_chart(df.set_index("Year")[["Revenue", "Profit"]])
-
-# --- SANDBOX SUBMISSION ---
-elif page == "Sandbox Submission":
-    st.title("Bank of Namibia Sandbox Interface")
-    st.write("Compile and submit your application journey to the BoN Regulatory Sandbox.")
-
-    st.subheader("Data Compilation Checklist")
-    st.checkbox("Anonymized SME Profile", value=True)
-    st.checkbox("Diagnostic Readiness Journey", value=True)
-    st.checkbox("AI Audit Trail", value=True)
-    st.checkbox("Compliance Declarations", value=False)
-
-    if st.button("Compile and Submit to BoN"):
-        with st.spinner("Anonymizing data and generating sandbox report..."):
+    st.title("🤖 AI Document Decipherer")
+    up = st.file_uploader("Upload document", type=['pdf', 'png', 'jpg'])
+    if up and st.button("Run AI Analysis"):
+        add_log(f"AI Scan: {up.name}")
+        with st.spinner("Processing..."):
             time.sleep(3)
-            st.success("🎉 Successfully submitted to the BoN Regulatory Sandbox!")
-            st.write("Reference ID: **BON-SANDBOX-2023-9981**")
-            st.balloons()
+            res = decipherer.decipher(up.name)
+            st.success("Extraction Successful")
+            st.write(f"**Keywords:** {', '.join(res['keywords'])}")
+            st.session_state['trust_score'] = min(st.session_state['trust_score'] + 0.12, 1.0)
+
+# --- FINANCIAL PROJECTIONS ---
+elif page == "Financial Projections":
+    st.title("📊 Financial Projection Assistant")
+    rev = st.number_input("Base Revenue (NAD)", value=100000)
+    exp = st.number_input("Base Expenses (NAD)", value=80000)
+    scen = st.selectbox("Scenario", ["Conservative", "Realistic", "Optimistic"])
+    df_p = generate_projections(rev, exp, scen)
+    st.table(df_p)
+    st.line_chart(df_p.set_index("Year")[["Revenue", "Profit"]])
 
 # --- CREDITWORTHINESS SIMULATOR ---
 elif page == "Creditworthiness Simulator":
-    st.title("Creditworthiness Simulator")
-    st.write("See how specific actions could improve your risk profile and interest rates.")
+    st.title("⚖️ Creditworthiness Simulator")
+    curr = st.session_state['readiness_score']
+    st.write(f"**Current Score:** {curr}%")
+    opt1 = st.checkbox("Reduce Debt (+10 pts)")
+    opt2 = st.checkbox("Clean Records (+15 pts)")
+    sim = min(curr + (10 if opt1 else 0) + (15 if opt2 else 0), 100)
+    st.metric("Simulated Score", f"{sim}%", delta=f"{sim - curr}%")
+    st.write(f"**Interest Rate Bracket:** {'12.5%' if sim > 80 else '18.5%'}")
 
-    current_score = st.session_state.readiness_score
-    st.write(f"**Current Score:** {current_score}")
+# --- SANDBOX SUBMISSION ---
+elif page == "Sandbox Submission":
+    st.title("🏦 BoN Sandbox Portal")
+    if st.button("Submit to Sandbox"):
+        add_log("Sandbox Submission")
+        with st.spinner("Processing..."):
+            time.sleep(4)
+            st.success("Submitted! ID: BON-SAND-9981")
 
-    st.subheader("Simulate Improvements")
-    imp_options = [
-        {"label": "Reduce Debt-to-Income Ratio", "impact": 10},
-        {"label": "Secure a Formal Off-take Contract", "impact": 15},
-        {"label": "Keep 6 Months Clean Bank Statements", "impact": 20},
-        {"label": "Complete BIPA Registration", "impact": 15}
-    ]
-
-    selected_imps = []
-    for imp in imp_options:
-        if st.checkbox(f"{imp['label']} (+{imp['impact']} pts)"):
-            selected_imps.append(imp)
-
-    simulated_score = min(current_score + sum(i['impact'] for i in selected_imps), 100)
-
-    st.divider()
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Simulated Score", f"{simulated_score}%", delta=f"{simulated_score - current_score}%")
-    with col2:
-        rate = "12.5%" if simulated_score > 80 else "15.5%" if simulated_score > 60 else "18.5%"
-        st.metric("Potential Interest Rate", rate)
-
-    st.info(f"**Risk Profile:** {'Low' if simulated_score > 80 else 'Medium' if simulated_score > 60 else 'High'}")
-
-# --- TRUST PORTFOLIO ---
-elif page == "Trust Portfolio":
-    st.title("Trust Portfolio & Fiduciary Logs")
-    st.write("Manage your verified documents and view activity history.")
-
-    st.subheader("Verified Documents")
-    st.checkbox("BIPA Registration Certificate", value=True)
-    st.checkbox("NamRA Tax Good Standing", value=False)
-    st.checkbox("Audited Financial Statements", value=False)
-
-    st.subheader("Fiduciary Usage Log")
-
-    # Fetch from API
-    res = call_api("usage-logs/")
-    if res and res.status_code == 200:
-        st.dataframe(pd.DataFrame(res.json()))
+# --- FIDUCIARY LOGS ---
+elif page == "Fiduciary Logs":
+    st.title("📜 Fiduciary Logs")
+    if st.session_state['usage_logs']:
+        st.table(pd.DataFrame(st.session_state['usage_logs']))
     else:
-        # Sample data if API down
-        log_data = [
-            {"timestamp": "2023-11-01 10:15", "action": "Updated SME Profile"},
-            {"timestamp": "2023-11-01 10:20", "action": "Ran AI Document Scan"},
-        ]
-        st.dataframe(pd.DataFrame(log_data))
+        st.info("No activity recorded.")
 
-# Footer
 st.markdown("---")
-st.caption("FundReady Namibia DSS - Built with Python & Streamlit for the Bank of Namibia Regulatory Sandbox.")
+st.caption("FundReady Namibia - 100% Python/Streamlit")
